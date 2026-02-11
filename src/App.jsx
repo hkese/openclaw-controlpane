@@ -10,6 +10,7 @@ import SessionsPage from './pages/SessionsPage';
 import TaskBoard from './pages/TaskBoard';
 import CronPage from './pages/CronPage';
 import StandupPage from './pages/StandupPage';
+import JournalPage from './pages/JournalPage';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -54,6 +55,8 @@ export default function App() {
         return <CronPage />;
       case 'standup':
         return <StandupPage />;
+      case 'journal':
+        return <JournalPage />;
       default:
         // Gateway detail page (id-based)
         return <GatewayDetail gatewayId={currentPage} onBack={handleBack} />;

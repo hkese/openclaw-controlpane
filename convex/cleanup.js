@@ -9,7 +9,7 @@ import { mutation } from "./_generated/server";
 export const removeAllGatewayData = mutation({
     args: { gatewayId: v.string() },
     handler: async (ctx, { gatewayId }) => {
-        const tables = ["tasks", "comments", "documents", "activities", "notifications"];
+        const tables = ["tasks", "comments", "documents", "activities", "notifications", "journal"];
         let totalDeleted = 0;
 
         for (const table of tables) {

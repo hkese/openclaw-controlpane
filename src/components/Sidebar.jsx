@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Server, LayoutDashboard, Users, MessageSquare, LayoutGrid, Clock, Newspaper, Check, Unplug, RefreshCw, Pencil, Trash2 } from 'lucide-react';
+import { Server, LayoutDashboard, Users, MessageSquare, LayoutGrid, Clock, Newspaper, BookOpen, Check, Unplug, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import useGatewayStore from '../stores/useGatewayStore';
 import useMissionStore from '../stores/useMissionStore';
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
     { id: 'agents', label: 'Agents', icon: Users, detail: 'Agent roster' },
     { id: 'sessions', label: 'Sessions', icon: MessageSquare, detail: 'Chat & sessions' },
     { id: 'tasks', label: 'Task Board', icon: LayoutGrid, detail: 'Kanban board' },
+    { id: 'journal', label: 'Journal', icon: BookOpen, detail: 'Dev diary' },
     { id: 'cron', label: 'Cron Jobs', icon: Clock, detail: 'Heartbeats & cron' },
     { id: 'standup', label: 'Standup', icon: Newspaper, detail: 'Daily summary' },
 ];
@@ -26,7 +27,7 @@ export default function Sidebar({ currentPage, onNavigate, onSelectGateway, onEd
     const agents = useMissionStore(s => s.agents);
     const gwArray = Object.values(gateways);
 
-    const [confirmId, setConfirmId] = useState(null); // which gateway is pending removal confirmation
+    const [confirmId, setConfirmId] = useState(null);
 
     const inboxCount = tasks.filter(t => t.status === 'inbox').length;
     const reviewCount = tasks.filter(t => t.status === 'review').length;
@@ -80,7 +81,7 @@ export default function Sidebar({ currentPage, onNavigate, onSelectGateway, onEd
                         return (
                             <div key={gw.id}>
                                 <div
-                                    className={`sidebar-item ${isActive ? 'active' : ''} ${isSelected ? 'selected-gw' : ''}`}
+                                    className={`sidebar-item sidebar-gw-item ${isActive ? 'active' : ''} ${isSelected ? 'selected-gw' : ''}`}
                                     onClick={() => handleGatewayClick(gw.id)}
                                 >
                                     <div className="item-icon">
@@ -94,45 +95,7 @@ export default function Sidebar({ currentPage, onNavigate, onSelectGateway, onEd
                                         <div className="item-detail">{gw.url}</div>
                                     </div>
 
-                                    {/* Edit button */}
-                                    <button
-                                        className="gw-action-btn"
-                                        title="編輯"
-                                        onClick={(e) => { e.stopPropagation(); onEditGateway?.(gw); }}
-                                        style={{ marginRight: 2 }}
-                                    >
-                                        <Pencil size={11} />
-                                    </button>
-
-                                    {/* Disconnect / Reconnect button */}
-                                    {isConnected ? (
-                                        <button
-                                            className="gw-action-btn gw-disconnect"
-                                            title="Disconnect"
-                                            onClick={(e) => { e.stopPropagation(); disconnectGateway(gw.id); }}
-                                        >
-                                            <Unplug size={13} />
-                                        </button>
-                                    ) : gw.status === 'disconnected' || gw.status === 'error' ? (
-                                        <button
-                                            className="gw-action-btn gw-reconnect"
-                                            title="Reconnect"
-                                            onClick={(e) => { e.stopPropagation(); reconnectGateway(gw.id); }}
-                                        >
-                                            <RefreshCw size={13} />
-                                        </button>
-                                    ) : null}
-
-                                    {/* Remove button */}
-                                    <button
-                                        className="gw-action-btn"
-                                        title="移除"
-                                        onClick={(e) => { e.stopPropagation(); setConfirmId(isConfirming ? null : gw.id); }}
-                                        style={{ color: 'var(--accent-red)' }}
-                                    >
-                                        <Trash2 size={12} />
-                                    </button>
-
+                                    {/* Status dot — always visible */}
                                     <div
                                         className="item-status"
                                         style={{
@@ -141,6 +104,44 @@ export default function Sidebar({ currentPage, onNavigate, onSelectGateway, onEd
                                             boxShadow: gw.status === 'connected' ? '0 0 6px var(--accent-green)' : 'none',
                                         }}
                                     />
+
+                                    {/* Action buttons — visible on hover */}
+                                    <div className="gw-hover-actions">
+                                        <button
+                                            className="gw-action-btn"
+                                            title="編輯"
+                                            onClick={(e) => { e.stopPropagation(); onEditGateway?.(gw); }}
+                                        >
+                                            <Pencil size={11} />
+                                        </button>
+
+                                        {isConnected ? (
+                                            <button
+                                                className="gw-action-btn gw-disconnect"
+                                                title="Disconnect"
+                                                onClick={(e) => { e.stopPropagation(); disconnectGateway(gw.id); }}
+                                            >
+                                                <Unplug size={12} />
+                                            </button>
+                                        ) : (gw.status === 'disconnected' || gw.status === 'error') ? (
+                                            <button
+                                                className="gw-action-btn gw-reconnect"
+                                                title="Reconnect"
+                                                onClick={(e) => { e.stopPropagation(); reconnectGateway(gw.id); }}
+                                            >
+                                                <RefreshCw size={12} />
+                                            </button>
+                                        ) : null}
+
+                                        <button
+                                            className="gw-action-btn"
+                                            title="移除"
+                                            onClick={(e) => { e.stopPropagation(); setConfirmId(isConfirming ? null : gw.id); }}
+                                            style={{ color: 'var(--accent-red)' }}
+                                        >
+                                            <Trash2 size={11} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Inline removal confirmation */}

@@ -63,4 +63,14 @@ export default defineSchema({
     })
         .index("by_delivered", ["delivered"])
         .index("by_gateway", ["gatewayId"]),
+
+    journal: defineTable({
+        gatewayId: v.string(),
+        content: v.string(),
+        mood: v.optional(v.string()),
+        tags: v.optional(v.array(v.string())),
+        createdAt: v.number(),
+    })
+        .index("by_gateway", ["gatewayId"])
+        .index("by_gateway_time", ["gatewayId", "createdAt"]),
 });

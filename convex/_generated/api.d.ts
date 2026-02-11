@@ -13,6 +13,7 @@ import type * as cleanup from "../cleanup.js";
 import type * as comments from "../comments.js";
 import type * as documents from "../documents.js";
 import type * as gateway_configs from "../gateway_configs.js";
+import type * as journal from "../journal.js";
 import type * as notifications from "../notifications.js";
 import type * as tasks from "../tasks.js";
 
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   comments: typeof comments;
   documents: typeof documents;
   gateway_configs: typeof gateway_configs;
+  journal: typeof journal;
   notifications: typeof notifications;
   tasks: typeof tasks;
 }>;

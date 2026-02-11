@@ -89,7 +89,7 @@ const useGatewayStore = create((set, get) => ({
         );
         if (duplicate) return { error: GW_ERR_DUPLICATE_NAME };
 
-        const id = existingId || `gw-${url.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}`;
+        const id = existingId || `gw-${url.replace(/[^a-zA-Z0-9]/g, '-')}`;
 
         const connection = new GatewayConnection({
             url,
