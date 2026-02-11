@@ -162,6 +162,201 @@ export class GatewayConnection {
         }
     }
 
+    // ─── Agents API ───
+
+    async listAgents(params = {}) {
+        try {
+            return await this.request('agents.list', params);
+        } catch (e) {
+            console.error('[Gateway] agents.list failed:', e);
+            return null;
+        }
+    }
+
+    async createAgent(params) {
+        return this.request('agents.create', params);
+    }
+
+    async updateAgent(params) {
+        return this.request('agents.update', params);
+    }
+
+    async deleteAgent(params) {
+        return this.request('agents.delete', params);
+    }
+
+    async getAgentFiles(params) {
+        try {
+            return await this.request('agents.files.list', params);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async getAgentFile(params) {
+        try {
+            return await this.request('agents.files.get', params);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async setAgentFile(params) {
+        return this.request('agents.files.set', params);
+    }
+
+    async getAgentIdentity(params = {}) {
+        try {
+            return await this.request('agent.identity', params);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ─── Sessions API ───
+
+    async listSessions(params = {}) {
+        try {
+            return await this.request('sessions.list', {
+                includeDerivedTitles: true,
+                includeLastMessage: true,
+                limit: 50,
+                ...params,
+            });
+        } catch (e) {
+            console.error('[Gateway] sessions.list failed:', e);
+            return null;
+        }
+    }
+
+    async previewSessions(keys, params = {}) {
+        try {
+            return await this.request('sessions.preview', { keys, ...params });
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async patchSession(key, patch) {
+        return this.request('sessions.patch', { key, ...patch });
+    }
+
+    async resetSession(key) {
+        return this.request('sessions.reset', { key });
+    }
+
+    async deleteSession(key, deleteTranscript = false) {
+        return this.request('sessions.delete', { key, deleteTranscript });
+    }
+
+    async compactSession(key, maxLines) {
+        return this.request('sessions.compact', { key, ...(maxLines ? { maxLines } : {}) });
+    }
+
+    async getSessionUsage(params = {}) {
+        try {
+            return await this.request('sessions.usage', params);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ─── Chat API ───
+
+    async tailChat(params = {}) {
+        try {
+            return await this.request('chat.tail', params);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async injectChat(params) {
+        return this.request('chat.inject', params);
+    }
+
+    async abortChat(params) {
+        return this.request('chat.abort', params);
+    }
+
+    // ─── Agent Messaging ───
+
+    async sendToAgent(message, params = {}) {
+        const idempotencyKey = `cp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        return this.request('agent', {
+            message,
+            idempotencyKey,
+            ...params,
+        });
+    }
+
+    async wakeAgent(text, mode = 'now') {
+        return this.request('wake', { text, mode });
+    }
+
+    // ─── Cron API ───
+
+    async listCron(params = {}) {
+        try {
+            return await this.request('cron.list', params);
+        } catch (e) {
+            console.error('[Gateway] cron.list failed:', e);
+            return null;
+        }
+    }
+
+    async getCronStatus() {
+        try {
+            return await this.request('cron.status', {});
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async addCron(params) {
+        return this.request('cron.add', params);
+    }
+
+    async updateCron(params) {
+        return this.request('cron.update', params);
+    }
+
+    async removeCron(params) {
+        return this.request('cron.remove', params);
+    }
+
+    async runCron(id, mode = 'force') {
+        return this.request('cron.run', { id, mode });
+    }
+
+    async getCronRuns(id, limit = 10) {
+        try {
+            return await this.request('cron.runs', { id, limit });
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ─── Models API ───
+
+    async listModels(params = {}) {
+        try {
+            return await this.request('models.list', params);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ─── Config API ───
+
+    async getConfig(params = {}) {
+        try {
+            return await this.request('config.get', params);
+        } catch (e) {
+            return null;
+        }
+    }
+
     // ─── Private ───
 
     _sendConnect(nonce) {
