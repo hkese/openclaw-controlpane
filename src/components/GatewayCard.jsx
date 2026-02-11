@@ -1,11 +1,14 @@
-import { motion } from 'framer-motion';
-import { Server, Zap, Wifi, WifiOff, Trash2, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Server, Zap, Wifi, WifiOff, Trash2, RefreshCw, Pencil } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import useGatewayStore from '../stores/useGatewayStore';
 
-export default function GatewayCard({ gateway, onClick }) {
+export default function GatewayCard({ gateway, onClick, onEdit }) {
     const removeGateway = useGatewayStore(s => s.removeGateway);
+    const removeGatewayWithData = useGatewayStore(s => s.removeGatewayWithData);
     const reconnectGateway = useGatewayStore(s => s.reconnectGateway);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const health = gateway.health;
     const sessionCount = health?.sessions
@@ -52,6 +55,14 @@ export default function GatewayCard({ gateway, onClick }) {
                     <StatusBadge status={gateway.status} />
                     <button
                         className="btn-icon"
+                        title="編輯"
+                        onClick={e => { e.stopPropagation(); onEdit?.(gateway); }}
+                        style={{ width: 28, height: 28 }}
+                    >
+                        <Pencil size={13} />
+                    </button>
+                    <button
+                        className="btn-icon"
                         title="重新連接"
                         onClick={e => { e.stopPropagation(); reconnectGateway(gateway.id); }}
                         style={{ width: 28, height: 28 }}
@@ -61,13 +72,60 @@ export default function GatewayCard({ gateway, onClick }) {
                     <button
                         className="btn-icon"
                         title="移除"
-                        onClick={e => { e.stopPropagation(); removeGateway(gateway.id); }}
+                        onClick={e => { e.stopPropagation(); setShowConfirm(true); }}
                         style={{ width: 28, height: 28, color: 'var(--accent-red)' }}
                     >
                         <Trash2 size={13} />
                     </button>
                 </div>
             </div>
+
+            {/* Removal Confirmation */}
+            <AnimatePresence>
+                {showConfirm && (
+                    <motion.div
+                        className="gw-confirm-overlay"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        style={{
+                            background: 'rgba(239,68,68,0.08)',
+                            border: '1px solid rgba(239,68,68,0.2)',
+                            borderRadius: 8,
+                            padding: '12px 16px',
+                            marginTop: 12,
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{ fontSize: '0.85rem', color: '#f87171', marginBottom: 10, fontWeight: 600 }}>
+                            ⚠️ 確認移除 "{gateway.name}"？
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => { removeGateway(gateway.id); setShowConfirm(false); }}
+                                style={{ flex: 1, fontSize: '0.75rem' }}
+                            >
+                                只移除設定
+                            </button>
+                            <button
+                                className="btn btn-sm"
+                                onClick={() => { removeGatewayWithData(gateway.id); setShowConfirm(false); }}
+                                style={{ flex: 1, fontSize: '0.75rem', background: 'var(--accent-red)', color: '#fff' }}
+                            >
+                                移除設定 + 全部數據
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setShowConfirm(false)}
+                                style={{ fontSize: '0.75rem' }}
+                            >
+                                取消
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {gateway.status === 'connected' && (
                 <>

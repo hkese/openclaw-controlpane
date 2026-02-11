@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Plus, Server, Activity, Zap, Radio } from 'lucide-react';
 import useGatewayStore from '../stores/useGatewayStore';
+import useMissionStore from '../stores/useMissionStore';
 
 export default function Header({ onAddGateway }) {
     const gateways = useGatewayStore(s => s.gateways);
+    const sessions = useMissionStore(s => s.sessions);
     const [time, setTime] = useState(new Date());
 
     useEffect(() => {
@@ -15,15 +17,13 @@ export default function Header({ onAddGateway }) {
     const connectedCount = gwArray.filter(g => g.status === 'connected').length;
     const totalCount = gwArray.length;
 
-    let totalSessions = 0;
+    // Use live session data from useMissionStore (accurate count)
+    const totalSessions = sessions.length;
+
+    // Channels from health data of connected gateways only
     let activeChannels = 0;
     gwArray.forEach(g => {
-        if (g.health) {
-            if (g.health.sessions) {
-                totalSessions += typeof g.health.sessions === 'number'
-                    ? g.health.sessions
-                    : Object.keys(g.health.sessions).length;
-            }
+        if (g.status === 'connected' && g.health) {
             if (g.health.channels) {
                 activeChannels += typeof g.health.channels === 'number'
                     ? g.health.channels

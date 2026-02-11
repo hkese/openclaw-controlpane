@@ -14,6 +14,7 @@ import StandupPage from './pages/StandupPage';
 export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [modalOpen, setModalOpen] = useState(false);
+  const [editGateway, setEditGateway] = useState(null);
   const restoreGateways = useGatewayStore(s => s.restoreGateways);
 
   useEffect(() => {
@@ -24,10 +25,25 @@ export default function App() {
   const handleSelectGateway = (id) => setCurrentPage(id);
   const handleBack = () => setCurrentPage('dashboard');
 
+  const handleAddGateway = () => {
+    setEditGateway(null);
+    setModalOpen(true);
+  };
+
+  const handleEditGateway = (gw) => {
+    setEditGateway(gw);
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setEditGateway(null);
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard onSelectGateway={handleSelectGateway} onAddGateway={() => setModalOpen(true)} />;
+        return <Dashboard onSelectGateway={handleSelectGateway} onAddGateway={handleAddGateway} onEditGateway={handleEditGateway} />;
       case 'agents':
         return <AgentsPage />;
       case 'sessions':
@@ -46,16 +62,17 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      <Header onAddGateway={() => setModalOpen(true)} />
+      <Header onAddGateway={handleAddGateway} />
       <Sidebar
         currentPage={currentPage}
         onNavigate={handleNavigate}
         onSelectGateway={handleSelectGateway}
+        onEditGateway={handleEditGateway}
       />
       <main className="app-main">
         {renderPage()}
       </main>
-      <AddGatewayModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+      <AddGatewayModal isOpen={modalOpen} onClose={handleModalClose} editGateway={editGateway} />
     </div>
   );
 }

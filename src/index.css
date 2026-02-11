@@ -2205,7 +2205,8 @@ body {
   color: var(--text-secondary);
 }
 
-.standup-section-body {}
+
+
 
 .standup-task {
   padding: 6px 0;
@@ -2345,4 +2346,527 @@ body {
 .feed-message {
   color: var(--text-secondary);
   flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════
+   MISSION CONTROL v2.1 — PROVISIONING & ACTIVITY
+   ═══════════════════════════════════════════════════ */
+
+/* ─── Provision Modal ─── */
+.provision-modal {
+  max-width: 680px;
+  width: 90vw;
+}
+
+.provision-subheader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px 12px;
+}
+
+.provision-subheader .muted {
+  font-size: 0.78rem;
+}
+
+.btn-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--accent-cyan);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+
+.btn-text:hover {
+  background: rgba(0, 255, 200, 0.08);
+}
+
+/* ─── Provision Grid ─── */
+.provision-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 0 24px 16px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.provision-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.provision-card:hover:not(.exists) {
+  border-color: var(--accent-cyan);
+  transform: translateY(-1px);
+}
+
+.provision-card.selected {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 255, 200, 0.06);
+}
+
+.provision-card.exists {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.provision-card-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.provision-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid var(--border-color);
+  background: transparent;
+  transition: all 0.15s;
+  color: white;
+}
+
+.provision-checkbox.checked {
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.provision-exists-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-cyan);
+  background: rgba(0, 255, 200, 0.1);
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.provision-emoji {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.provision-card h4 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.provision-role {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* ─── Progress Bar ─── */
+.provision-progress {
+  padding: 12px 24px 0;
+}
+
+.provision-progress-bar {
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.provision-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.provision-progress-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ─── Modal actions (split left/right) ─── */
+.modal-actions-left,
+.modal-actions-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.modal-actions {
+  justify-content: space-between;
+}
+
+.btn-danger-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-danger-outline:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
+
+.btn-danger-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Provision Results ─── */
+.provision-results {
+  padding: 24px;
+}
+
+.provision-results-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.provision-results-icon {
+  font-size: 2rem;
+}
+
+.provision-results-summary h3 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.provision-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.provision-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+}
+
+.provision-result.success {
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.provision-result.error {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.provision-result-error {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════
+   AGENT CARD — ACTIVITY STATUS
+   ═══════════════════════════════════════════════════ */
+
+.agent-activity-line {
+  padding: 4px 8px;
+  margin: 4px 0 2px;
+  background: rgba(34, 197, 94, 0.06);
+  border-left: 2px solid var(--accent-green);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.72rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-label {
+  font-weight: 700;
+  color: var(--accent-green);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.activity-text {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ─── Pulse animation for status dot ─── */
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+}
+
+.agent-status-dot.pulse {
+  animation: pulse-dot 2s infinite;
+}
+
+/* ═══════════════════════════════════════════════════
+   DRAWER — ACTIVITY BLOCK
+   ═══════════════════════════════════════════════════ */
+
+.agent-activity-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+}
+
+.agent-activity-block.active {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.agent-activity-block.idle {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+.activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.activity-dot.pulse {
+  background: var(--accent-green);
+  animation: pulse-dot 2s infinite;
+}
+
+.activity-session {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+.activity-message {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* ─── Agent Tasks List (drawer) ─── */
+.agent-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agent-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  font-size: 0.78rem;
+}
+
+.task-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.task-status-dot.status-inbox {
+  background: #94a3b8;
+}
+
+.task-status-dot.status-assigned {
+  background: #60a5fa;
+}
+
+.task-status-dot.status-in_progress {
+  background: #f59e0b;
+}
+
+.task-status-dot.status-review {
+  background: #a855f7;
+}
+
+.task-status-dot.status-done {
+  background: #22c55e;
+}
+
+.task-status-dot.status-blocked {
+  background: #ef4444;
+}
+
+.agent-task-item .muted {
+  margin-left: auto;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+/* ─── Gateway Action Buttons ─── */
+.gw-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.gw-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.gw-disconnect:hover {
+  color: var(--accent-red);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.gw-reconnect:hover {
+  color: var(--accent-green);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.gw-reconnect svg {
+  animation: none;
+}
+
+.gw-reconnect:active svg {
+  animation: spin 0.5s linear;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── Task Dispatch ─── */
+.task-dispatch-section {
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-dispatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--accent-green) 0%, #10b981 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-dispatch:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.btn-dispatch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-dispatch.dispatching {
+  background: linear-gradient(135deg, var(--accent-amber) 0%, #f59e0b 100%);
+}
+
+.session-live-feed {
+  margin-top: 12px;
+  padding: 10px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.session-live-feed .feed-line {
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.session-live-feed .feed-line.agent {
+  color: var(--accent-cyan);
+}
+
+.session-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.session-status-badge.working {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-amber);
+}
+
+.session-status-badge.idle {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-muted);
 }

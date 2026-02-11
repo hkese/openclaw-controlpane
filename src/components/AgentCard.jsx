@@ -39,7 +39,7 @@ export function getAgentDisplayName(agent) {
     return agent?.name || agent?.displayName || agent?.agentId || 'Unknown';
 }
 
-export default function AgentCard({ agent, sessions = [], cronJobs = [], onClick }) {
+export default function AgentCard({ agent, sessions = [], cronJobs = [], activity, onClick }) {
     const agentId = agent?.agentId || agent?.id || '';
     const name = getAgentDisplayName(agent);
     const emoji = agent?.emoji || getAgentEmoji(agentId);
@@ -47,7 +47,7 @@ export default function AgentCard({ agent, sessions = [], cronJobs = [], onClick
 
     // Determine status from sessions
     const agentSessions = sessions.filter(s => s.key?.includes(agentId) || s.agentId === agentId);
-    const hasActive = agentSessions.some(s => s.active || s.running);
+    const hasActive = activity?.status === 'active' || agentSessions.some(s => s.active || s.running);
     const status = hasActive ? 'active' : 'idle';
 
     // Heartbeat from cron
@@ -80,8 +80,21 @@ export default function AgentCard({ agent, sessions = [], cronJobs = [], onClick
                     <h3 className="agent-name">{name}</h3>
                     <span className="agent-role">{agent?.role || agentId}</span>
                 </div>
-                <div className="agent-status-dot" style={{ background: colors.dot }} title={colors.label} />
+                <div className={`agent-status-dot ${hasActive ? 'pulse' : ''}`} style={{ background: colors.dot }} title={colors.label} />
             </div>
+
+            {/* Activity status line */}
+            {activity?.lastMessage && (
+                <div className="agent-activity-line">
+                    <span className="activity-label">Working on:</span>
+                    <span className="activity-text">{activity.lastMessage.slice(0, 60)}{activity.lastMessage.length > 60 ? '...' : ''}</span>
+                </div>
+            )}
+            {!activity?.lastMessage && hasActive && (
+                <div className="agent-activity-line active">
+                    <span className="activity-label">Active session</span>
+                </div>
+            )}
 
             {/* Stats row */}
             <div className="agent-stats">

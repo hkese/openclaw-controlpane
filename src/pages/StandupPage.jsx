@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Newspaper, CheckCircle, Clock, AlertTriangle, Eye, Activity } from 'lucide-react';
 import useMissionStore from '../stores/useMissionStore';
+import { useTasks, useActivities, useAllComments } from '../hooks/useConvexMission';
 import { getAgentEmoji } from '../components/AgentCard';
 
 /* ──────────────────────────────────────────────────────
@@ -9,10 +10,10 @@ import { getAgentEmoji } from '../components/AgentCard';
    ────────────────────────────────────────────────────── */
 
 export default function StandupPage() {
-    const tasks = useMissionStore(s => s.tasks);
-    const activities = useMissionStore(s => s.activities);
+    const { tasks } = useTasks();
+    const { activities } = useActivities(500);
     const agents = useMissionStore(s => s.agents);
-    const comments = useMissionStore(s => s.comments);
+    const comments = useAllComments();
 
     // Today boundaries
     const today = new Date();
@@ -27,7 +28,6 @@ export default function StandupPage() {
     const inProgress = tasks.filter(t => t.status === 'in_progress');
     const blocked = tasks.filter(t => t.status === 'blocked');
     const needsReview = tasks.filter(t => t.status === 'review');
-    const assigned = tasks.filter(t => t.status === 'assigned');
     const inbox = tasks.filter(t => t.status === 'inbox');
 
     // Per-agent activity summary
@@ -96,7 +96,7 @@ export default function StandupPage() {
                             </span>
                             <ul>
                                 {acts.slice(0, 5).map(a => (
-                                    <li key={a.id}>{a.message}</li>
+                                    <li key={a._id}>{a.message}</li>
                                 ))}
                                 {acts.length > 5 && <li className="muted">...and {acts.length - 5} more</li>}
                             </ul>
@@ -109,7 +109,7 @@ export default function StandupPage() {
             <div className="standup-feed">
                 <h3>Recent Activity</h3>
                 {activities.slice(0, 20).map(a => (
-                    <div key={a.id} className="feed-item">
+                    <div key={a._id} className="feed-item">
                         <span className="feed-time">{new Date(a.ts).toLocaleTimeString()}</span>
                         <span className="feed-agent">{a.agentName}</span>
                         <span className="feed-message">{a.message}</span>
@@ -132,7 +132,7 @@ function StandupSection({ icon, title, color, items }) {
             <div className="standup-section-body">
                 {items.length === 0 && <p className="muted">None</p>}
                 {items.map(t => (
-                    <div key={t.id} className="standup-task">
+                    <div key={t._id} className="standup-task">
                         <span>{t.title}</span>
                     </div>
                 ))}

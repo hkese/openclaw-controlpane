@@ -9,14 +9,14 @@ import useMissionStore from '../stores/useMissionStore';
    ────────────────────────────────────────────────────── */
 
 export default function CronPage() {
-    const gateways = useGatewayStore(s => s.gateways);
+    const getSelectedGateway = useGatewayStore(s => s.getSelectedGateway);
     const cronJobs = useMissionStore(s => s.cronJobs);
     const setCronJobs = useMissionStore(s => s.setCronJobs);
     const [loading, setLoading] = useState(false);
     const [selectedJob, setSelectedJob] = useState(null);
     const [runs, setRuns] = useState([]);
 
-    const connectedGw = Object.values(gateways).find(g => g.status === 'connected');
+    const connectedGw = getSelectedGateway();
 
     const fetchCrons = useCallback(async () => {
         if (!connectedGw) return;

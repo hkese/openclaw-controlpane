@@ -9,7 +9,7 @@ import useMissionStore from '../stores/useMissionStore';
    ────────────────────────────────────────────────────── */
 
 export default function SessionsPage() {
-    const gateways = useGatewayStore(s => s.gateways);
+    const getSelectedGateway = useGatewayStore(s => s.getSelectedGateway);
     const sessions = useMissionStore(s => s.sessions);
     const setSessions = useMissionStore(s => s.setSessions);
 
@@ -17,7 +17,7 @@ export default function SessionsPage() {
     const [loading, setLoading] = useState(false);
     const [selectedSession, setSelectedSession] = useState(null);
 
-    const connectedGw = Object.values(gateways).find(g => g.status === 'connected');
+    const connectedGw = getSelectedGateway();
 
     const fetchSessions = useCallback(async () => {
         if (!connectedGw) return;

@@ -5,7 +5,7 @@ import useGatewayStore from '../stores/useGatewayStore';
 import GatewayCard from '../components/GatewayCard';
 import EventFeed from '../components/EventFeed';
 
-export default function Dashboard({ onSelectGateway, onAddGateway }) {
+export default function Dashboard({ onSelectGateway, onAddGateway, onEditGateway }) {
     const gateways = useGatewayStore(s => s.gateways);
     const events = useGatewayStore(s => s.events);
     const gwArray = Object.values(gateways);
@@ -42,6 +42,7 @@ export default function Dashboard({ onSelectGateway, onAddGateway }) {
                                     key={gw.id}
                                     gateway={gw}
                                     onClick={onSelectGateway}
+                                    onEdit={onEditGateway}
                                 />
                             ))}
                         </AnimatePresence>
