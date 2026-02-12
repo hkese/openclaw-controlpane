@@ -119,13 +119,16 @@ function ChatPanel({ session, gateway, onClose }) {
     const [sending, setSending] = useState(false);
 
     useEffect(() => {
+        if (!gateway?.connection) return;
         // Tail the chat log
         gateway.connection.tailChat({ sessionKey: session.key, limit: 50 })
             .then(res => {
                 if (res?.messages) setMessages(res.messages);
                 else if (Array.isArray(res)) setMessages(res);
             })
-            .catch(() => { });
+            .catch((err) => {
+                console.warn('tailChat failed:', err);
+            });
     }, [session.key, gateway]);
 
     const sendMessage = async () => {
@@ -172,12 +175,21 @@ function ChatPanel({ session, gateway, onClose }) {
                 </div>
                 <div className="chat-messages">
                     {messages.length === 0 && <p className="muted center">No messages yet</p>}
-                    {messages.map((msg, i) => (
-                        <div key={i} className={`chat-msg ${msg.role || 'assistant'}`}>
-                            <span className="chat-role">{msg.role === 'user' ? 'You' : 'Agent'}</span>
-                            <div className="chat-content">{msg.content || msg.text || JSON.stringify(msg)}</div>
-                        </div>
-                    ))}
+                    {messages.map((msg, i) => {
+                        // msg.content can be: string, { type, text }, or [{ type, text }]
+                        let text = '';
+                        const c = msg.content ?? msg.text;
+                        if (typeof c === 'string') text = c;
+                        else if (Array.isArray(c)) text = c.map(b => b.text || '').join('\n');
+                        else if (c && typeof c === 'object') text = c.text || JSON.stringify(c);
+                        else text = JSON.stringify(msg);
+                        return (
+                            <div key={i} className={`chat-msg ${msg.role || 'assistant'}`}>
+                                <span className="chat-role">{msg.role === 'user' ? 'You' : 'Agent'}</span>
+                                <div className="chat-content">{text}</div>
+                            </div>
+                        );
+                    })}
                 </div>
                 <div className="chat-input-bar">
                     <input

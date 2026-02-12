@@ -75,11 +75,24 @@ function ChannelIcon({ channel, size = 14, showLabel = false }) {
 export default function TaskBoard() {
     const { tasks, updateTask } = useTasks();
     const agents = useMissionStore(s => s.agents);
+    const setAgents = useMissionStore(s => s.setAgents);
+    const getSelectedGateway = useGatewayStore(s => s.getSelectedGateway);
     const [showCreate, setShowCreate] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
     const [draggedTask, setDraggedTask] = useState(null);
     const [showArchive, setShowArchive] = useState(false);
     const { resumeWatchers, stopAllWatchers } = useTaskDispatch();
+
+    // Ensure agents are loaded (they may not be if user hasn't visited AgentsPage)
+    useEffect(() => {
+        if (agents.length > 0) return;
+        const gw = getSelectedGateway();
+        if (!gw?.connection) return;
+        gw.connection.listAgents().then(res => {
+            if (res?.agents) setAgents(res.agents);
+            else if (Array.isArray(res)) setAgents(res);
+        }).catch(() => { });
+    }, [agents.length, getSelectedGateway]);
     const archiveTask = useMutation(api.tasks.archive);
 
     // Activate session sync — auto-detects sessions and creates tasks
