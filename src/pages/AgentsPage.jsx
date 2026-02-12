@@ -456,18 +456,91 @@ function AgentDetailDrawer({ agent, sessions, cronJobs, gateway, activity, onClo
         [tasks, agentId]
     );
 
+    const [activeTab, setActiveTab] = useState('overview');
     const [soulContent, setSoulContent] = useState(null);
+    const [soulEditing, setSoulEditing] = useState(false);
+    const [soulDraft, setSoulDraft] = useState('');
+    const [agentFiles, setAgentFiles] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    // Editable fields
+    const [editName, setEditName] = useState(agent.name || '');
+    const [editEmoji, setEditEmoji] = useState(agent.emoji || '🤖');
+    const [editRole, setEditRole] = useState(agent.role || '');
+    const [editModel, setEditModel] = useState(agent.defaultModel || agent.model || '');
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+    const EMOJI_OPTIONS = ['🤖', '🔍', '🕵️', '👁️', '✍️', '🚀', '🎨', '📧', '💻', '📚', '🧠', '⚡', '🎯', '🛡️', '🔔', '📊', '🌐', '🎭', '🦊', '🐙', '🦅', '🐺', '🦁', '🐉', '💎', '🔮', '⭐', '🌙', '☀️', '🔥'];
 
     useEffect(() => {
         if (gateway?.connection) {
             setLoading(true);
-            gateway.connection.getAgentFile({ agentId, path: 'SOUL.md' })
-                .then(r => { if (r?.content) setSoulContent(r.content); })
-                .catch(() => { })
-                .finally(() => setLoading(false));
+            Promise.all([
+                gateway.connection.getAgentFile({ agentId, path: 'SOUL.md' }).catch(() => null),
+                gateway.connection.getAgentFiles?.({ agentId }).catch(() => null),
+            ]).then(([soulRes, filesRes]) => {
+                if (soulRes?.content) {
+                    setSoulContent(soulRes.content);
+                    setSoulDraft(soulRes.content);
+                }
+                if (filesRes?.files) setAgentFiles(filesRes.files);
+                else if (Array.isArray(filesRes)) setAgentFiles(filesRes);
+            }).finally(() => setLoading(false));
         }
     }, [agentId, gateway]);
+
+    const handleSaveOverview = async () => {
+        if (!gateway?.connection) return;
+        setSaving(true);
+        try {
+            await gateway.connection.updateAgent({
+                agentId,
+                name: editName,
+                emoji: editEmoji,
+                role: editRole,
+                defaultModel: editModel,
+            });
+        } catch (e) {
+            console.error('Failed to update agent:', e);
+        }
+        setSaving(false);
+    };
+
+    const handleSaveSoul = async () => {
+        if (!gateway?.connection) return;
+        setSaving(true);
+        try {
+            await gateway.connection.setAgentFile({ agentId, path: 'SOUL.md', content: soulDraft });
+            setSoulContent(soulDraft);
+            setSoulEditing(false);
+        } catch (e) {
+            console.error('Failed to save SOUL.md:', e);
+        }
+        setSaving(false);
+    };
+
+    // Infer channels from sessions
+    const inferredChannels = useMemo(() => {
+        const channels = new Set();
+        agentSessions.forEach(s => {
+            const key = s.key || '';
+            if (key.includes('whatsapp')) channels.add('WhatsApp');
+            if (key.includes('discord')) channels.add('Discord');
+            if (key.includes('slack')) channels.add('Slack');
+            if (key.includes('telegram')) channels.add('Telegram');
+        });
+        return [...channels];
+    }, [agentSessions]);
+
+    const TABS = [
+        { id: 'overview', label: 'Overview' },
+        { id: 'files', label: 'Files' },
+        { id: 'tools', label: 'Tools' },
+        { id: 'skills', label: 'Skills' },
+        { id: 'channels', label: 'Channels' },
+        { id: 'cron', label: 'Cron Jobs' },
+    ];
 
     return (
         <motion.div
@@ -479,105 +552,266 @@ function AgentDetailDrawer({ agent, sessions, cronJobs, gateway, activity, onClo
         >
             <motion.div
                 className="drawer agent-drawer"
-                initial={{ x: 400 }}
+                initial={{ x: 500 }}
                 animate={{ x: 0 }}
-                exit={{ x: 400 }}
+                exit={{ x: 500 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                 onClick={e => e.stopPropagation()}
+                style={{ width: 580 }}
             >
+                {/* Header */}
                 <div className="drawer-header">
                     <div className="drawer-title">
-                        <span className="agent-avatar-lg">{agent.emoji || '🤖'}</span>
+                        <span className="agent-avatar-lg">{editEmoji}</span>
                         <div>
-                            <h2>{agent.name || agentId}</h2>
-                            <span className="agent-role">{agent.role || 'Agent'}</span>
+                            <h2>{editName || agentId}</h2>
+                            <span className="agent-role">{editRole || 'Agent'}</span>
                         </div>
                     </div>
                     <button className="btn-icon" onClick={onClose}>&times;</button>
                 </div>
 
-                <div className="drawer-body">
-                    {/* Current Activity */}
-                    <section className="drawer-section">
-                        <h3>Current Activity</h3>
-                        {activity?.status === 'active' ? (
-                            <div className="agent-activity-block active">
-                                <span className="activity-dot pulse" />
-                                <div>
-                                    <strong>Working</strong>
-                                    {activity.sessionKey && (
-                                        <span className="activity-session">Session: {activity.sessionKey}</span>
-                                    )}
-                                    {activity.lastMessage && (
-                                        <p className="activity-message">"{activity.lastMessage}"</p>
-                                    )}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="agent-activity-block idle">
-                                <span className="activity-dot" />
-                                <span>Idle — no active session</span>
-                            </div>
-                        )}
-                    </section>
+                {/* Tab bar */}
+                <div className="agent-tab-bar">
+                    {TABS.map(tab => (
+                        <button
+                            key={tab.id}
+                            className={`agent-tab ${activeTab === tab.id ? 'active' : ''}`}
+                            onClick={() => setActiveTab(tab.id)}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
 
-                    {/* Assigned Tasks */}
-                    {assignedTasks.length > 0 && (
-                        <section className="drawer-section">
-                            <h3>Assigned Tasks ({assignedTasks.length})</h3>
-                            <div className="agent-tasks-list">
-                                {assignedTasks.map(t => (
-                                    <div key={t._id} className="agent-task-item">
-                                        <span className={`task-status-dot status-${t.status}`} />
-                                        <span>{t.title}</span>
-                                        {t.status === 'in_progress' ? (
-                                            <span className="session-status-badge working">Working</span>
-                                        ) : (
-                                            <span className="muted">{t.status}</span>
-                                        )}
+                {/* Tab content */}
+                <div className="drawer-body">
+                    {/* ═══ OVERVIEW TAB ═══ */}
+                    {activeTab === 'overview' && (
+                        <>
+                            {/* Current Activity */}
+                            <section className="drawer-section">
+                                <h3>Current Activity</h3>
+                                {activity?.status === 'active' ? (
+                                    <div className="agent-activity-block active">
+                                        <span className="activity-dot pulse" />
+                                        <div>
+                                            <strong>Working</strong>
+                                            {activity.sessionKey && (
+                                                <span className="activity-session">Session: {activity.sessionKey}</span>
+                                            )}
+                                            {activity.lastMessage && (
+                                                <p className="activity-message">"{activity.lastMessage}"</p>
+                                            )}
+                                        </div>
                                     </div>
-                                ))}
+                                ) : (
+                                    <div className="agent-activity-block idle">
+                                        <span className="activity-dot" />
+                                        <span>Idle — no active session</span>
+                                    </div>
+                                )}
+                            </section>
+
+                            {/* Editable Fields */}
+                            <section className="drawer-section">
+                                <h3>Agent Settings</h3>
+                                <div className="agent-edit-grid">
+                                    <div className="agent-edit-field">
+                                        <label>Emoji / Icon</label>
+                                        <div className="emoji-picker-wrap">
+                                            <button
+                                                className="emoji-picker-btn"
+                                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                            >
+                                                <span className="emoji-preview">{editEmoji}</span>
+                                                <span className="emoji-change-label">Change</span>
+                                            </button>
+                                            {showEmojiPicker && (
+                                                <div className="emoji-picker-dropdown">
+                                                    {EMOJI_OPTIONS.map(e => (
+                                                        <button
+                                                            key={e}
+                                                            className={`emoji-option ${editEmoji === e ? 'selected' : ''}`}
+                                                            onClick={() => { setEditEmoji(e); setShowEmojiPicker(false); }}
+                                                        >
+                                                            {e}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="agent-edit-field">
+                                        <label>Name</label>
+                                        <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Agent name" />
+                                    </div>
+                                    <div className="agent-edit-field">
+                                        <label>Role</label>
+                                        <input value={editRole} onChange={e => setEditRole(e.target.value)} placeholder="e.g. Content Writer" />
+                                    </div>
+                                    <div className="agent-edit-field">
+                                        <label>Model</label>
+                                        <input value={editModel} onChange={e => setEditModel(e.target.value)} placeholder="e.g. claude-sonnet-4-20250514" />
+                                    </div>
+                                </div>
+                                <button
+                                    className="btn-primary"
+                                    onClick={handleSaveOverview}
+                                    disabled={saving}
+                                    style={{ marginTop: 12, width: '100%' }}
+                                >
+                                    {saving ? <><Loader size={14} className="spin" /> Saving...</> : <><Check size={14} /> Save Changes</>}
+                                </button>
+                            </section>
+
+                            {/* Assigned Tasks */}
+                            {assignedTasks.length > 0 && (
+                                <section className="drawer-section">
+                                    <h3>Assigned Tasks ({assignedTasks.length})</h3>
+                                    <div className="agent-tasks-list">
+                                        {assignedTasks.map(t => (
+                                            <div key={t._id} className="agent-task-item">
+                                                <span className={`task-status-dot status-${t.status}`} />
+                                                <span>{t.title}</span>
+                                                {t.status === 'in_progress' ? (
+                                                    <span className="session-status-badge working">Working</span>
+                                                ) : (
+                                                    <span className="muted">{t.status}</span>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+                        </>
+                    )}
+
+                    {/* ═══ FILES TAB ═══ */}
+                    {activeTab === 'files' && (
+                        <>
+                            <section className="drawer-section">
+                                <h3>SOUL.md</h3>
+                                {loading && <p className="muted">Loading...</p>}
+                                {!loading && soulEditing ? (
+                                    <>
+                                        <textarea
+                                            className="soul-editor"
+                                            value={soulDraft}
+                                            onChange={e => setSoulDraft(e.target.value)}
+                                            rows={16}
+                                        />
+                                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                                            <button className="btn-primary" onClick={handleSaveSoul} disabled={saving}>
+                                                {saving ? 'Saving...' : 'Save'}
+                                            </button>
+                                            <button className="btn-secondary" onClick={() => { setSoulEditing(false); setSoulDraft(soulContent || ''); }}>
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : !loading && soulContent ? (
+                                    <>
+                                        <pre className="soul-content">{soulContent}</pre>
+                                        <button className="btn-secondary" onClick={() => setSoulEditing(true)} style={{ marginTop: 8 }}>
+                                            ✏️ Edit SOUL.md
+                                        </button>
+                                    </>
+                                ) : !loading && (
+                                    <>
+                                        <p className="muted">No SOUL file found.</p>
+                                        <button className="btn-secondary" onClick={() => { setSoulDraft(''); setSoulEditing(true); }} style={{ marginTop: 8 }}>
+                                            + Create SOUL.md
+                                        </button>
+                                    </>
+                                )}
+                            </section>
+
+                            {/* Other Files */}
+                            {agentFiles.length > 0 && (
+                                <section className="drawer-section">
+                                    <h3>Agent Files ({agentFiles.length})</h3>
+                                    <div className="agent-files-list">
+                                        {agentFiles.map(f => (
+                                            <div key={f.path || f.name} className="agent-file-row">
+                                                <span>📄 {f.path || f.name}</span>
+                                                <span className="muted">{f.size ? `${(f.size / 1024).toFixed(1)}KB` : ''}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+                        </>
+                    )}
+
+                    {/* ═══ TOOLS TAB ═══ */}
+                    {activeTab === 'tools' && (
+                        <section className="drawer-section">
+                            <h3>Tools</h3>
+                            <div className="placeholder-section">
+                                <span className="placeholder-icon">🔧</span>
+                                <p>Tool configuration will be available when the gateway supports the <code>tools.list</code> API.</p>
+                                <p className="muted">Tools allow agents to interact with external services, run code, browse the web, and more.</p>
                             </div>
                         </section>
                     )}
 
-                    {/* Sessions */}
-                    <section className="drawer-section">
-                        <h3>Sessions ({agentSessions.length})</h3>
-                        {agentSessions.length === 0 && <p className="muted">No active sessions</p>}
-                        {agentSessions.map(s => (
-                            <div key={s.key || s.id} className="session-row">
-                                <span className="session-key">{s.key}</span>
-                                <span className={`status-dot ${s.active ? 'online' : 'offline'}`} />
+                    {/* ═══ SKILLS TAB ═══ */}
+                    {activeTab === 'skills' && (
+                        <section className="drawer-section">
+                            <h3>Skills</h3>
+                            <div className="placeholder-section">
+                                <span className="placeholder-icon">📖</span>
+                                <p>Skill configuration will be available when the gateway supports the <code>skills.list</code> API.</p>
+                                <p className="muted">Skills are reusable workflows and instructions that agents can learn and apply.</p>
                             </div>
-                        ))}
-                    </section>
+                        </section>
+                    )}
 
-                    {/* Cron Jobs */}
-                    <section className="drawer-section">
-                        <h3>Cron Jobs ({agentCrons.length})</h3>
-                        {agentCrons.length === 0 && <p className="muted">No heartbeats configured</p>}
-                        {agentCrons.map(c => (
-                            <div key={c.id} className="cron-row">
-                                <span className="cron-name">{c.name}</span>
-                                <span className={`cron-status ${c.enabled ? 'enabled' : 'disabled'}`}>
-                                    {c.enabled ? 'ON' : 'OFF'}
-                                </span>
-                            </div>
-                        ))}
-                    </section>
+                    {/* ═══ CHANNELS TAB ═══ */}
+                    {activeTab === 'channels' && (
+                        <section className="drawer-section">
+                            <h3>Connected Channels</h3>
+                            {inferredChannels.length > 0 ? (
+                                <div className="agent-channels-list">
+                                    {inferredChannels.map(ch => (
+                                        <div key={ch} className="agent-channel-row">
+                                            <span className="channel-name">{ch}</span>
+                                            <span className="session-status-badge working">Active</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="muted">No channels detected from sessions.</p>
+                            )}
 
-                    {/* SOUL File */}
-                    <section className="drawer-section">
-                        <h3>SOUL.md</h3>
-                        {loading && <p className="muted">Loading...</p>}
-                        {!loading && soulContent && (
-                            <pre className="soul-content">{soulContent}</pre>
-                        )}
-                        {!loading && !soulContent && (
-                            <p className="muted">No SOUL file found for this agent.</p>
-                        )}
-                    </section>
+                            {/* Sessions */}
+                            <h3 style={{ marginTop: 20 }}>Sessions ({agentSessions.length})</h3>
+                            {agentSessions.length === 0 && <p className="muted">No active sessions</p>}
+                            {agentSessions.map(s => (
+                                <div key={s.key || s.id} className="session-row">
+                                    <span className="session-key">{s.key}</span>
+                                    <span className={`status-dot ${s.active ? 'online' : 'offline'}`} />
+                                </div>
+                            ))}
+                        </section>
+                    )}
+
+                    {/* ═══ CRON JOBS TAB ═══ */}
+                    {activeTab === 'cron' && (
+                        <section className="drawer-section">
+                            <h3>Cron Jobs ({agentCrons.length})</h3>
+                            {agentCrons.length === 0 && <p className="muted">No heartbeats configured</p>}
+                            {agentCrons.map(c => (
+                                <div key={c.id} className="cron-row">
+                                    <span className="cron-name">{c.name}</span>
+                                    <span className={`cron-status ${c.enabled ? 'enabled' : 'disabled'}`}>
+                                        {c.enabled ? 'ON' : 'OFF'}
+                                    </span>
+                                </div>
+                            ))}
+                        </section>
+                    )}
                 </div>
             </motion.div>
         </motion.div>
