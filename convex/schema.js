@@ -18,11 +18,18 @@ export default defineSchema({
         status: v.string(),
         assigneeIds: v.optional(v.array(v.string())),
         sessionKey: v.optional(v.string()),
+        source: v.optional(v.string()),        // "manual" | "whatsapp" | "gateway" | channel name
+        channel: v.optional(v.string()),       // "whatsapp" | "discord" | "slack" | "telegram" | "web"
+        spawnedBy: v.optional(v.string()),     // parent session key if sub-agent
+        runId: v.optional(v.string()),         // agent run ID for tracking
+        completedAt: v.optional(v.number()),   // when task finished
+        archivedAt: v.optional(v.number()),    // when moved to archive
         createdAt: v.number(),
         updatedAt: v.number(),
     })
         .index("by_gateway", ["gatewayId"])
-        .index("by_gateway_status", ["gatewayId", "status"]),
+        .index("by_gateway_status", ["gatewayId", "status"])
+        .index("by_session_key", ["sessionKey"]),
 
     comments: defineTable({
         gatewayId: v.string(),

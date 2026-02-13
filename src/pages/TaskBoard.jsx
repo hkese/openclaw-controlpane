@@ -349,11 +349,21 @@ function CreateTaskModal({ agents, onClose }) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [assignees, setAssignees] = useState([]);
+    const [channel, setChannel] = useState('');
+
+    const CHANNEL_OPTIONS = [
+        { value: '', label: 'No channel (Gateway)' },
+        { value: 'discord', label: 'Discord' },
+        { value: 'whatsapp', label: 'WhatsApp' },
+        { value: 'slack', label: 'Slack' },
+        { value: 'telegram', label: 'Telegram' },
+        { value: 'web', label: 'Web' },
+    ];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!title.trim()) return;
-        await addTask(title, description, assignees);
+        await addTask(title, description, assignees, channel);
         onClose();
     };
 
@@ -393,6 +403,22 @@ function CreateTaskModal({ agents, onClose }) {
                             placeholder="Describe the task..."
                             rows={4}
                         />
+                    </div>
+                    <div className="form-group">
+                        <label>Channel</label>
+                        <div className="channel-picker">
+                            {CHANNEL_OPTIONS.map(opt => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    className={`channel-pick ${channel === opt.value ? 'selected' : ''}`}
+                                    onClick={() => setChannel(opt.value)}
+                                >
+                                    {opt.value ? <ChannelIcon channel={opt.value} size={16} /> : <MessageSquare size={16} />}
+                                    <span>{opt.label}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                     {agents.length > 0 && (
                         <div className="form-group">

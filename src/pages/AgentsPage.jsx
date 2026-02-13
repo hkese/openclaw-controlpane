@@ -215,6 +215,7 @@ export default function AgentsPage() {
                         gateway={connectedGw}
                         activity={agentActivities[selectedAgent.agentId || selectedAgent.id]}
                         onClose={() => setSelectedAgent(null)}
+                        onRefresh={fetchAll}
                     />
                 )}
             </AnimatePresence>
@@ -446,7 +447,7 @@ function ProvisionModal({ gateway, existingAgents, onClose, onDone }) {
    Agent Detail Drawer
    ══════════════════════════════════════════════ */
 
-function AgentDetailDrawer({ agent, sessions, cronJobs, gateway, activity, onClose }) {
+function AgentDetailDrawer({ agent, sessions, cronJobs, gateway, activity, onClose, onRefresh }) {
     const agentId = agent.agentId || agent.id || '';
     const agentSessions = sessions.filter(s => s.key?.includes(agentId) || s.agentId === agentId);
     const agentCrons = cronJobs.filter(c => c.agentId === agentId || c.name?.toLowerCase().includes(agentId));
@@ -463,6 +464,9 @@ function AgentDetailDrawer({ agent, sessions, cronJobs, gateway, activity, onClo
     const [agentFiles, setAgentFiles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [workspacePath, setWorkspacePath] = useState('');
+    const [availableModels, setAvailableModels] = useState([]);
+    const [soulError, setSoulError] = useState('');
 
     // Editable fields
     const [editName, setEditName] = useState(agent.name || '');
@@ -471,21 +475,53 @@ function AgentDetailDrawer({ agent, sessions, cronJobs, gateway, activity, onClo
     const [editModel, setEditModel] = useState(agent.defaultModel || agent.model || '');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-    const EMOJI_OPTIONS = ['🤖', '🔍', '🕵️', '👁️', '✍️', '🚀', '🎨', '📧', '💻', '📚', '🧠', '⚡', '🎯', '🛡️', '🔔', '📊', '🌐', '🎭', '🦊', '🐙', '🦅', '🐺', '🦁', '🐉', '💎', '🔮', '⭐', '🌙', '☀️', '🔥'];
+    const EMOJI_OPTIONS = ['🤖', '🔍', '🕵️', '👁️', '✍️', '🚀', '🎨', '📧', '💻', '📚', '🧠', '⚡', '🎯', '🛡️', '🔔', '📊', '🌐', '🎭', '🦊', '🐙', '🦅', '🐺', '🦁', '🐉', '💎', '🔮', '⭐', '🌙', '☀️', '🔥', '🧪'];
+
+    const ROLE_OPTIONS = [
+        'Blog & copy', 'User research', 'Visual design', 'Code & infra',
+        'Email campaigns', 'Docs & knowledge base', 'Market analysis',
+        'SEO optimization', 'Social content', 'QA / Testing',
+        'DevOps', 'Product management', 'Team lead', 'Custom',
+    ];
+
+    // Fallback model list
+    const FALLBACK_MODELS = [
+        'claude-opus-4-6-thinking', 'claude-sonnet-4-5-thinking',
+        'gemini-3-flash', 'gemini-3-pro-high',
+    ];
 
     useEffect(() => {
         if (gateway?.connection) {
             setLoading(true);
+            setSoulError('');
             Promise.all([
-                gateway.connection.getAgentFile({ agentId, path: 'SOUL.md' }).catch(() => null),
+                gateway.connection.getAgentFile({ agentId, path: 'SOUL.md' })
+                    .catch(() => gateway.connection.getAgentFile({ agentId, path: './SOUL.md' }).catch(() => null)),
                 gateway.connection.getAgentFiles?.({ agentId }).catch(() => null),
-            ]).then(([soulRes, filesRes]) => {
+                gateway.connection.getConfig?.().catch(() => null),
+                gateway.connection.listModels?.().catch(() => null),
+            ]).then(([soulRes, filesRes, configRes, modelsRes]) => {
                 if (soulRes?.content) {
                     setSoulContent(soulRes.content);
                     setSoulDraft(soulRes.content);
+                } else {
+                    setSoulError('SOUL.md not found — the gateway may not have agent file access configured, or the workspace path may be incorrect.');
                 }
                 if (filesRes?.files) setAgentFiles(filesRes.files);
                 else if (Array.isArray(filesRes)) setAgentFiles(filesRes);
+                // Extract workspace path from config
+                if (configRes) {
+                    const agentConf = configRes?.agents?.list?.find(a => a.id === agentId);
+                    setWorkspacePath(agentConf?.workspace || configRes?.agents?.defaults?.workspace || '');
+                }
+                // Extract available models
+                if (modelsRes?.models) {
+                    setAvailableModels(modelsRes.models.map(m => m.id || m.name || m));
+                } else if (Array.isArray(modelsRes)) {
+                    setAvailableModels(modelsRes.map(m => m.id || m.name || m));
+                } else if (configRes?.agents?.defaults?.models) {
+                    setAvailableModels(Object.keys(configRes.agents.defaults.models));
+                }
             }).finally(() => setLoading(false));
         }
     }, [agentId, gateway]);
@@ -501,6 +537,8 @@ function AgentDetailDrawer({ agent, sessions, cronJobs, gateway, activity, onClo
                 role: editRole,
                 defaultModel: editModel,
             });
+            // Refresh agent list so card updates immediately
+            if (onRefresh) onRefresh();
         } catch (e) {
             console.error('Failed to update agent:', e);
         }
@@ -648,11 +686,42 @@ function AgentDetailDrawer({ agent, sessions, cronJobs, gateway, activity, onClo
                                     </div>
                                     <div className="agent-edit-field">
                                         <label>Role</label>
-                                        <input value={editRole} onChange={e => setEditRole(e.target.value)} placeholder="e.g. Content Writer" />
+                                        <select
+                                            className="glass-select"
+                                            value={ROLE_OPTIONS.includes(editRole) ? editRole : 'Custom'}
+                                            onChange={e => {
+                                                if (e.target.value === 'Custom') setEditRole('');
+                                                else setEditRole(e.target.value);
+                                            }}
+                                        >
+                                            {ROLE_OPTIONS.map(r => (
+                                                <option key={r} value={r}>{r}</option>
+                                            ))}
+                                        </select>
+                                        {(!ROLE_OPTIONS.includes(editRole) || editRole === '') && (
+                                            <input
+                                                value={editRole}
+                                                onChange={e => setEditRole(e.target.value)}
+                                                placeholder="Enter custom role..."
+                                                style={{ marginTop: 6 }}
+                                            />
+                                        )}
                                     </div>
                                     <div className="agent-edit-field">
                                         <label>Model</label>
-                                        <input value={editModel} onChange={e => setEditModel(e.target.value)} placeholder="e.g. claude-sonnet-4-20250514" />
+                                        <select
+                                            className="glass-select"
+                                            value={editModel}
+                                            onChange={e => setEditModel(e.target.value)}
+                                        >
+                                            <option value="">— Select model —</option>
+                                            {(availableModels.length > 0 ? availableModels : FALLBACK_MODELS).map(m => (
+                                                <option key={m} value={m}>{m.replace('google-antigravity/', '')}</option>
+                                            ))}
+                                            {editModel && ![...availableModels, ...FALLBACK_MODELS].includes(editModel) && (
+                                                <option value={editModel}>{editModel} (current)</option>
+                                            )}
+                                        </select>
                                     </div>
                                 </div>
                                 <button
@@ -664,6 +733,23 @@ function AgentDetailDrawer({ agent, sessions, cronJobs, gateway, activity, onClo
                                     {saving ? <><Loader size={14} className="spin" /> Saving...</> : <><Check size={14} /> Save Changes</>}
                                 </button>
                             </section>
+
+                            {/* Workspace Path */}
+                            {workspacePath && (
+                                <section className="drawer-section">
+                                    <h3>Workspace</h3>
+                                    <div className="workspace-path-row">
+                                        <code className="workspace-path">{workspacePath}</code>
+                                        <button
+                                            className="btn-icon"
+                                            title="Copy path"
+                                            onClick={() => navigator.clipboard.writeText(workspacePath)}
+                                        >
+                                            📋
+                                        </button>
+                                    </div>
+                                </section>
+                            )}
 
                             {/* Assigned Tasks */}
                             {assignedTasks.length > 0 && (
@@ -719,7 +805,12 @@ function AgentDetailDrawer({ agent, sessions, cronJobs, gateway, activity, onClo
                                     </>
                                 ) : !loading && (
                                     <>
-                                        <p className="muted">No SOUL file found.</p>
+                                        <p className="muted">{soulError || 'No SOUL file found.'}</p>
+                                        {workspacePath && (
+                                            <p className="muted" style={{ fontSize: '0.7rem', marginTop: 4 }}>
+                                                Expected at: <code>{workspacePath}/SOUL.md</code>
+                                            </p>
+                                        )}
                                         <button className="btn-secondary" onClick={() => { setSoulDraft(''); setSoulEditing(true); }} style={{ marginTop: 8 }}>
                                             + Create SOUL.md
                                         </button>

@@ -2042,6 +2042,43 @@ body {
   border-color: var(--border-light);
 }
 
+/* ─── Channel picker ─── */
+.channel-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.channel-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  transition: all var(--transition-fast);
+}
+
+.channel-pick.selected {
+  background: var(--accent-cyan-dim, rgba(103, 232, 249, 0.1));
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.channel-pick:hover {
+  border-color: var(--border-light);
+}
+
+.channel-pick img {
+  width: 16px;
+  height: 16px;
+}
+
 /* ─── Status picker ─── */
 .status-picker {
   display: flex;
@@ -3052,6 +3089,59 @@ body {
   outline: none;
   border-color: var(--accent-green);
   box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.12);
+}
+
+/* ─── Glass Select Dropdowns ─── */
+.glass-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-family: var(--font-sans);
+  transition: all 0.2s;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.glass-select:focus {
+  outline: none;
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.12);
+}
+
+.glass-select option {
+  background: var(--bg-card, #1e1e2e);
+  color: var(--text-primary);
+  padding: 8px;
+}
+
+/* ─── Workspace Path Display ─── */
+.workspace-path-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+}
+
+.workspace-path {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ─── Emoji Picker ─── */

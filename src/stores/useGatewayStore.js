@@ -56,12 +56,19 @@ function saveSelectedId(id) {
     }
 }
 
+// ─── Chat event pub/sub for real-time session sync ───
+const _chatEventListeners = new Set();
+
 const useGatewayStore = create((set, get) => ({
     gateways: {},           // id -> { id, name, url, token, connection, status, health, presence, nodes }
     selectedGatewayId: null, // the currently selected gateway — all pages use this
     events: [],             // global event log
     maxEvents: 200,
     _restored: false,       // prevents double-restore
+
+    // ─── Chat event pub/sub ───
+    subscribeChatEvent: (fn) => { _chatEventListeners.add(fn); },
+    unsubscribeChatEvent: (fn) => { _chatEventListeners.delete(fn); },
 
     // ─── Select a gateway for all pages ───
     selectGateway: (id) => {
@@ -103,6 +110,13 @@ const useGatewayStore = create((set, get) => ({
                     ].slice(0, state.maxEvents);
                     return { events };
                 });
+                // Fan out chat events to subscribers
+                if (event?.event === 'chat' && event?.payload) {
+                    const chatEvent = { ...event.payload, gatewayId: id };
+                    for (const fn of _chatEventListeners) {
+                        try { fn(chatEvent); } catch (e) { console.warn('[GW] chat listener error:', e); }
+                    }
+                }
             },
             onStatusChange: (status) => {
                 set(state => {

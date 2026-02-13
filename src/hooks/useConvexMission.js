@@ -29,8 +29,8 @@ export function useTasks() {
     return {
         tasks,
         gatewayId,
-        addTask: (title, description, assigneeIds) =>
-            gatewayId ? createTask({ gatewayId, title, description, assigneeIds }) : null,
+        addTask: (title, description, assigneeIds, channel) =>
+            gatewayId ? createTask({ gatewayId, title, description, assigneeIds, channel: channel || undefined }) : null,
         updateTask: (id, patch) => updateTask({ id, patch }),
         deleteTask: (id) => removeTask({ id }),
     };

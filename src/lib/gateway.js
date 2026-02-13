@@ -262,13 +262,41 @@ export class GatewayConnection {
     }
 
     // ─── Chat API ───
+    // NOTE: OpenClaw gateway does NOT have a "chat.tail" method.
+    // The correct methods are: chat.history, chat.send, chat.abort, chat.inject
 
-    async tailChat(params = {}) {
+    /**
+     * Get chat history for a session (replaces the non-existent chat.tail).
+     * @param {Object} params - { sessionKey: string, limit?: number }
+     * @returns {{ sessionKey, sessionId, messages, thinkingLevel, verboseLevel }}
+     */
+    async chatHistory(params = {}) {
         try {
-            return await this.request('chat.tail', params);
+            return await this.request('chat.history', params);
         } catch (e) {
+            console.error('[Gateway] chat.history failed:', e);
             return null;
         }
+    }
+
+    /**
+     * Backwards-compat alias — delegates to chatHistory (chat.history).
+     * Previously called the non-existent chat.tail; now fixed.
+     */
+    async tailChat(params = {}) {
+        return this.chatHistory(params);
+    }
+
+    /**
+     * Send a chat message to a session (WebChat-style).
+     * @param {Object} params - { sessionKey, message, idempotencyKey, thinking?, deliver?, attachments? }
+     */
+    async chatSend(params) {
+        const idempotencyKey = params.idempotencyKey || `cp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        return this.request('chat.send', {
+            ...params,
+            idempotencyKey,
+        });
     }
 
     async injectChat(params) {
@@ -281,13 +309,43 @@ export class GatewayConnection {
 
     // ─── Agent Messaging ───
 
+    /**
+     * Send a message to the agent system.
+     * IMPORTANT: The gateway returns { runId, status: 'accepted' } — NOT a sessionKey.
+     * The sessionKey must be constructed deterministically: agent:{agentId}:main
+     * @returns {{ runId, status: 'accepted', acceptedAt }}
+     */
     async sendToAgent(message, params = {}) {
         const idempotencyKey = `cp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        // Construct the session key for the agent if not provided
+        const agentId = params.agentId || 'main';
+        const sessionKey = params.sessionKey || `agent:${agentId}:main`;
+        // IMPORTANT: Do NOT pass agentId to the gateway 'agent' method.
+        // The gateway validates it against cfg.agents.list which may not include
+        // custom agents. Instead, send only sessionKey — the gateway resolves
+        // the agent from the session key automatically (resolveAgentIdFromSessionKey).
+        const { agentId: _discardedAgentId, ...restParams } = params;
         return this.request('agent', {
             message,
             idempotencyKey,
-            ...params,
+            sessionKey,
+            ...restParams,
         });
+    }
+
+    /**
+     * Wait for an agent run to complete.
+     * @param {string} runId - The run ID from sendToAgent
+     * @param {number} timeoutMs - Timeout in ms (default 30000)
+     * @returns {{ runId, status, startedAt?, endedAt?, error? }}
+     */
+    async agentWait(runId, timeoutMs = 30000) {
+        try {
+            return await this.request('agent.wait', { runId, timeoutMs });
+        } catch (e) {
+            console.error('[Gateway] agent.wait failed:', e);
+            return null;
+        }
     }
 
     async wakeAgent(text, mode = 'now') {
